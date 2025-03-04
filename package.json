@@ -1,17 +1,29 @@
 {
-  "name": "atmosfericka-optika",
+  "name": "fyo",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "main.js",
+  "dependencies": {
+    "lil-gui": "^0.20.0",
+    "three": "^0.174.0"
+  },
+  "devDependencies": {
+    "gh-pages": "^6.3.0"
+  },
   "scripts": {
-    "dev": "vite",
-    "build": "vite build"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "predeploy": "parcel build index.html --public-url ./",
+    "deploy": "gh-pages -d dist"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xbilko03/FYO.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
-  "dependencies": {
-    "lil-gui": "^0.20.0",
-    "three": "^0.174.0"
-  }
+  "bugs": {
+    "url": "https://github.com/xbilko03/FYO/issues"
+  },
+  "homepage": "https://github.com/xbilko03/FYO",
+  "description": ""
 }
