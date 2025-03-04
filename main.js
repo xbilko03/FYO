@@ -5,10 +5,10 @@
 *
 * Author        : Jozef Bilko (xbilko03)
 */
-import * as THREE from 'three';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.135.0/build/three.module.js';
 import { createScene } from './scene.js';
 import { setupControls } from './controls.js';
-import { createUI } from './UI.js'; // Import the createUI function
+import { createUI } from './UI.js';
 
 /* init scene */
 const sceneSize = 100;
@@ -43,7 +43,7 @@ window.addEventListener('resize', () =>
 const { controls, updateMovement } = setupControls(camera, renderer);
 
 /* Create the UI */
-createUI(); // Create the UI with bullet points
+createUI();
 
 /* runs the scene */
 function run()
