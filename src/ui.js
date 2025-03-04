@@ -27,7 +27,7 @@ export function createUI()
 
     /* list of words */
     const list = document.createElement('ul');
-    const items = ['Mouse - Look around', 'ESC - Return mouse', 'W - Move forward', 'A - Move left', 'S - Move backwards', 'D - Move right'];
+    const items = ['Mouse - Look around', 'WASD - Move', 'ESC - Return mouse'];
 
     items.forEach(item => {
         const listItem = document.createElement('li');

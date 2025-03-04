@@ -5,7 +5,7 @@
 *
 * Author        : Jozef Bilko (xbilko03)
 */
-import * as THREE from 'three';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.174.0/build/three.module.js';
 import { createScene } from './scene.js';
 import { setupControls } from './controls.js';
 import { createUI } from './ui.js';
@@ -46,9 +46,9 @@ const { controls, updateMovement } = setupControls(camera, renderer);
 createUI();
 
 /* runs the scene */
-function run()
+function animate()
 {
-    requestAnimationFrame(run);
+    requestAnimationFrame(animate);
     updateMovement();
 
     /* restrain movement defined by a box */
@@ -61,4 +61,4 @@ function run()
 
     renderer.render(scene, camera);
 }
-run();
+animate();

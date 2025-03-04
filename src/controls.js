@@ -5,8 +5,8 @@
 *
 * Author        : Jozef Bilko (xbilko03)
 */
-import * as THREE from 'three';
-import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.174.0/build/three.module.js';
+import { PointerLockControls } from '../libs/PointerLockControls.js';
 
 export function setupControls(camera, renderer)
 {
