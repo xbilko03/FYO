@@ -5,7 +5,7 @@
 *
 * Author        : Jozef Bilko (xbilko03)
 */
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.135.0/build/three.module.js';
+import * as THREE from 'three';
 import { createScene } from './scene.js';
 import { setupControls } from './controls.js';
 import { createUI } from './ui.js';
