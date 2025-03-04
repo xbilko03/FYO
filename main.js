@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { createScene } from './scene.js';
 import { setupControls } from './controls.js';
+import { createUI } from './UI.js'; // Import the createUI function
 
 /* init scene */
 const sceneSize = 100;
@@ -41,6 +42,9 @@ window.addEventListener('resize', () =>
 /* setup controls */
 const { controls, updateMovement } = setupControls(camera, renderer);
 
+/* Create the UI */
+createUI(); // Create the UI with bullet points
+
 /* runs the scene */
 function run()
 {
@@ -58,4 +62,3 @@ function run()
     renderer.render(scene, camera);
 }
 run();
-
