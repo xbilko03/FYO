@@ -8,7 +8,7 @@
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.135.0/build/three.module.js';
 import { createScene } from './scene.js';
 import { setupControls } from './controls.js';
-import { createUI } from './UI.js';
+import { createUI } from './ui.js';
 
 /* init scene */
 const sceneSize = 100;
