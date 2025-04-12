@@ -6,9 +6,9 @@
 * Author        : Jozef Bilko (xbilko03)
 */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.174.0/build/three.module.js';
-import { createScene, updateSkyColor, updateSunPosition } from './scene.js';
+import { createScene, updateSkyColor, updateSunPosition, updateClouds } from './scene.js';
 import { setupControls } from './controls.js';
-import { createUI, timeSliderValue } from './ui.js';
+import { createUI, timeSliderValue, cloudsSliderValue } from './ui.js';
 
 /* init scene */
 const sceneSize = 100;
@@ -55,10 +55,13 @@ function animate()
     updateMovement();
 
     const time = timeSliderValue;
+    const cloudiness = cloudsSliderValue;
 
     // Zavoláme updateSkyColor, aby sme zmenili farbu oblohy podľa času
+    updateClouds(time, scene, cloudiness);  // Aktualizujeme oblačnosť
     updateSkyColor(time, scene);
     updateSunPosition(time  - 6, scene);
+
 
     /* restrain movement defined by a box */
     if (camera.position.x < minX) camera.position.x = minX;

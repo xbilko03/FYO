@@ -8,7 +8,7 @@
 
 
 export let timeSliderValue = 6; // Defaultná hodnota
-
+export let cloudsSliderValue = 0;
 
 export function createUI()
 {
@@ -49,15 +49,15 @@ export function createUI()
 
     /* light slider */
     const timeSliderLabel = document.createElement('label');
-    timeSliderLabel.textContent = 'Light Intensity: ';
+    timeSliderLabel.textContent = 'Clouds [octet]: ';
     timeSliderLabel.style.marginBottom = '5px';
     uiWindow.appendChild(timeSliderLabel);
 
     const timeSlider = document.createElement('input');
     timeSlider.type = 'range';
     timeSlider.min = '0';
-    timeSlider.max = '100';
-    timeSlider.value = '50';
+    timeSlider.max = '8';
+    timeSlider.value = '0';
     timeSlider.style.width = '100%';
     uiWindow.appendChild(timeSlider);
 
@@ -68,6 +68,7 @@ export function createUI()
     timeSlider.addEventListener('input', (e) =>
     {
         timeValue.textContent = ` ${e.target.value}`;
+        cloudsSliderValue = parseFloat(e.target.value);
     });
 
     /* space between sliders */
@@ -77,7 +78,7 @@ export function createUI()
 
     /* time slider */
     const lightSliderLabel = document.createElement('label');
-    lightSliderLabel.textContent = 'Time: ';
+    lightSliderLabel.textContent = 'Time [hours]: ';
     lightSliderLabel.style.marginBottom = '5px';
     uiWindow.appendChild(lightSliderLabel);
 
