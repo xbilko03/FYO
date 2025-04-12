@@ -5,6 +5,11 @@
 *
 * Author        : Jozef Bilko (xbilko03)
 */
+
+
+export let timeSliderValue = 6; // Defaultná hodnota
+
+
 export function createUI()
 {
     /* window definition */
@@ -78,9 +83,9 @@ export function createUI()
 
     const lightSlider = document.createElement('input');
     lightSlider.type = 'range';
-    lightSlider.min = '0';
-    lightSlider.max = '24';
-    lightSlider.value = '12';
+    lightSlider.min = '6';
+    lightSlider.max = '18';
+    lightSlider.value = '6';
     lightSlider.style.width = '100%';
     uiWindow.appendChild(lightSlider);
 
@@ -90,6 +95,7 @@ export function createUI()
 
     lightSlider.addEventListener('input', (e) => {
         lightValue.textContent = ` ${e.target.value}`;
+        timeSliderValue = parseFloat(e.target.value);
     });
 
     /* append to doc */

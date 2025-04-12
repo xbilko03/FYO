@@ -16,6 +16,8 @@ export function setupControls(camera, renderer)
     let moveBackward = false;
     let moveLeft = false;
     let moveRight = false;
+    let moveUp = false;
+    let moveDown = false;
 
     window.addEventListener('keydown', (event) =>
     {
@@ -23,13 +25,18 @@ export function setupControls(camera, renderer)
         if (event.key === 's') moveBackward = true;
         if (event.key === 'a') moveLeft = true;
         if (event.key === 'd') moveRight = true;
+        if (event.code === 'Space') moveUp = true;
+        if (event.shiftKey) moveDown = true;
     });
+
     window.addEventListener('keyup', (event) =>
     {
         if (event.key === 'w') moveForward = false;
         if (event.key === 's') moveBackward = false;
         if (event.key === 'a') moveLeft = false;
         if (event.key === 'd') moveRight = false;
+        if (event.code === 'Space') moveUp = false;
+        if (!event.shiftKey) moveDown = false;
     });
 
     document.body.addEventListener('click', () => 
@@ -54,6 +61,10 @@ export function setupControls(camera, renderer)
             camera.position.addScaledVector(right, -moveSpeed);
         if (moveRight)
             camera.position.addScaledVector(right, moveSpeed);
+        if (moveUp)
+            camera.position.y += moveSpeed;
+        if (moveDown)
+            camera.position.y -= moveSpeed;
     }
 
     return { controls, updateMovement };

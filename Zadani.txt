@@ -1,5 +1,3 @@
-TREBA KONZULTOVAT
-
 Atmosférická optika, duha, jevy halo, barva oblohy. (Obsazeno)
 
 Projekt se předkládá v elektronické formě, vizualizace ve formě aplikace, která může být předvedena pomocí standardních nástrojů Windows, vč. zdrojových souborů. 
