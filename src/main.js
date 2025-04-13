@@ -10,28 +10,21 @@ import { createScene, updateSkyColor, updateSunPosition, updateClouds, updateSun
 import { setupControls } from './controls.js';
 import { createUI, timeSliderValue, cloudsSliderValue, humiditySliderValue, rainSliderValue } from './ui.js';
 
-/* init scene */
+/* init */
 const sceneSize = 100;
 const scene = createScene(sceneSize);
-
-/* init camera */
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 2, 5);
-
-/* init window */
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-/* init camera speed */
-const moveSpeed = 0.1;
-
-/* box definition */
+/* movement constraint box */
 const minX = -10, maxX = 10;
 const minY = 2, maxY = 5;
 const minZ = -10, maxZ = 10;
 
-/* allows the window to be resized */
+/* window resize */
 window.addEventListener('resize', () =>
 {
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -42,11 +35,7 @@ window.addEventListener('resize', () =>
 /* setup controls */
 const { controls, updateMovement } = setupControls(camera, renderer);
 
-/* Create the UI */
 createUI();
-
-let time = 6; // Začneme od poludnia (12:00)
-const timeStep = 0.05; // Množstvo, o ktoré sa čas bude meniť každý frame
 
 /* runs the scene */
 function animate()
@@ -54,17 +43,13 @@ function animate()
     requestAnimationFrame(animate);
     updateMovement();
 
-    const time = timeSliderValue;
-    const cloudiness = cloudsSliderValue;
-    const humidity = humiditySliderValue;
-    const rain = rainSliderValue;
-
-    updateClouds(time, scene, cloudiness);
-    updateSkyColor(time, scene);
-    updateSunPosition(time  - 6, scene);
-    updateSunShineEffect(time, scene, camera, humidity);
-    updateRainLevel(rain, scene);
-    updateRainbowVisibility(time, cloudiness, rain, scene);
+    /* dynamic changes to environment */
+    updateClouds(timeSliderValue, scene, cloudsSliderValue);
+    updateSkyColor(timeSliderValue, scene);
+    updateSunPosition(timeSliderValue  - 6, scene);
+    updateSunShineEffect(timeSliderValue, scene, camera, humiditySliderValue);
+    updateRainLevel(rainSliderValue, scene);
+    updateRainbowVisibility(timeSliderValue, cloudsSliderValue, rainSliderValue, scene);
 
     /* restrain movement defined by a box */
     if (camera.position.x < minX) camera.position.x = minX;

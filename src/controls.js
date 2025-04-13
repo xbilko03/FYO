@@ -12,6 +12,7 @@ export function setupControls(camera, renderer)
 {
     const controls = new PointerLockControls(camera, renderer.domElement);
 
+    /* allowed movement */
     let moveForward = false;
     let moveBackward = false;
     let moveLeft = false;
@@ -19,6 +20,7 @@ export function setupControls(camera, renderer)
     let moveUp = false;
     let moveDown = false;
 
+    /* key maps */
     window.addEventListener('keydown', (event) =>
     {
         if (event.key === 'w') moveForward = true;
@@ -28,7 +30,6 @@ export function setupControls(camera, renderer)
         if (event.code === 'Space') moveUp = true;
         if (event.shiftKey) moveDown = true;
     });
-
     window.addEventListener('keyup', (event) =>
     {
         if (event.key === 'w') moveForward = false;
@@ -39,6 +40,7 @@ export function setupControls(camera, renderer)
         if (!event.shiftKey) moveDown = false;
     });
 
+    /* mouse mode */
     document.body.addEventListener('click', () => 
     {
         controls.lock();

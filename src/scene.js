@@ -16,11 +16,9 @@ let humidityRel = 100;
 export function createScene(sceneSize)
 {
     const scene = new THREE.Scene();
+    let time = 6;
 
-    // Hodnota 'time' sa nastaví neskôr
-    let time = 6; // predpokladajme, že máme čas medzi 0 a 24 hod.
-
-    /* sky definition */
+    /* Instantiate sky */
     const skyGeometry = new THREE.SphereGeometry(sceneSize, 32, 32);
     const skyMaterial = new THREE.ShaderMaterial({
         uniforms: { 
@@ -32,35 +30,30 @@ export function createScene(sceneSize)
             vWorldPosition = worldPosition.xyz;
             gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
         }`,
-        fragmentShader: `varying vec3 vWorldPosition;
+        fragmentShader: `
+        varying vec3 vWorldPosition;
         uniform float time;
     
         void main() {
-            // Definovanie farieb pre rôzne časti dňa
-            vec3 morningColor = vec3(0.9, 0.6, 0.3); // ranná obloha (oranžová)
-            vec3 middayColor = vec3(0.1, 0.6, 1.0); // poludnie (jasne modrá)
-            vec3 eveningColor = vec3(0.9, 0.6, 0.3); // večerná obloha (oranžová)
+            vec3 morningColor = vec3(0.9, 0.6, 0.3);
+            vec3 middayColor = vec3(0.1, 0.6, 1.0);
+            vec3 eveningColor = vec3(0.9, 0.6, 0.3);
     
-            // Interpolácia podľa času
-            float morning = smoothstep(4.0, 4.0, time);  // ranná fáza (6:00 až 9:00)
-            float midday = smoothstep(6.0, 13.0, time);  // poludňajšia fáza (9:00 až 15:00)
-            float evening = smoothstep(13.0, 18.0, time); // večerná fáza (15:00 až 18:00)
+            float morning = smoothstep(4.0, 4.0, time);
+            float midday = smoothstep(6.0, 13.0, time);
+            float evening = smoothstep(13.0, 18.0, time);
     
-            // Kombinácia farieb podľa času
             vec3 skyColor = mix(morningColor, middayColor, midday);
             skyColor = mix(skyColor, eveningColor, evening);
     
-            // Aplikovanie farby na oblohu
-            gl_FragColor = vec4(skyColor, 1.0); // výsledná farba oblohy
+            gl_FragColor = vec4(skyColor, 1.0);
         }`,
         side: THREE.BackSide
     });
-    
-    
     const sky = new THREE.Mesh(skyGeometry, skyMaterial);
     scene.add(sky);
     
-    /* clouds definition */
+    /* Instantiate clouds */
     const cloudGeometry = new THREE.SphereGeometry(sceneSize + 7, 32, 32);
     const cloudMaterial = new THREE.ShaderMaterial({
         uniforms: { 
@@ -79,8 +72,6 @@ export function createScene(sceneSize)
     uniform float time;
     uniform float cloudDensity;
     
-
-    // Hashovanie
     float hash(vec2 p) {
         return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
     }
@@ -113,462 +104,383 @@ export function createScene(sceneSize)
     vec2 coord = vWorldPosition.xz * 0.3 + vec2(time * 0.01, 0.0);
     float cloud = fbm(coord);
 
-    // Dynamický threshold: čím vyššia hustota, tým viac oblakov prejde prahom
-    float lower = 0.5 - cloudDensity * 2.5; // napr. od 1.0 (bez oblakov) po 0.4 (veľa oblakov)
-    float upper = lower + 5.0;              // mäkký prechod
+    float lower = 0.5 - cloudDensity * 2.5;
+    float upper = lower + 5.0;
     float alpha = smoothstep(lower, upper, cloud);
 
-    // Farby oblakov na základe času
-    vec3 morningCloudColor = vec3(1.0, 1.0, 1.0);  // Svetlé obláčky ráno
-    vec3 middayCloudColor = vec3(0.8, 0.8, 0.9);   // Jemne modré obláčky cez deň
-    vec3 eveningCloudColor = vec3(0.9, 0.7, 0.5);  // Teplé oranžové obláčky večer
+    vec3 morningCloudColor = vec3(1.0, 1.0, 1.0);
+    vec3 middayCloudColor = vec3(0.8, 0.8, 0.9);
+    vec3 eveningCloudColor = vec3(0.9, 0.7, 0.5);
 
-    // Interpolácia farieb na základe času
-    float morning = smoothstep(6.0, 9.0, time); // ranná fáza
-    float midday = smoothstep(9.0, 15.0, time); // poludňajšia fáza
-    float evening = smoothstep(15.0, 18.0, time); // večerná fáza
+    float morning = smoothstep(6.0, 9.0, time);
+    float midday = smoothstep(9.0, 15.0, time);
+    float evening = smoothstep(15.0, 18.0, time);
 
-    // Kombinácia farieb oblakov podľa času
     vec3 cloudColor = mix(morningCloudColor, middayCloudColor, midday);
     cloudColor = mix(cloudColor, eveningCloudColor, evening);
 
-    // Dynamická farba oblakov na základe hustoty
-    // Ak je cloudDensity vyššia, oblak bude tmavší
-    cloudColor *= mix(1.0, 0.6, cloudDensity); // Znižujeme jas farby, čím je cloudDensity vyššia
-
-    // Mixovanie farby a šumu
-    vec3 color = mix(cloudColor, vec3(1.0), cloud * 0.5); // Miešame farbu na základe šumu
-
-    gl_FragColor = vec4(color, alpha); // Výsledná farba oblakov
+    cloudColor *= mix(1.0, 0.6, cloudDensity);
+    vec3 color = mix(cloudColor, vec3(1.0), cloud * 0.5);
+    gl_FragColor = vec4(color, alpha);
 }
 
 `,
     transparent: true,
-    side: THREE.BackSide  // Zaistíme, že budú priesvitné
-});
+    side: THREE.BackSide
+    });
+    const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
+    clouds.position.set(0, -50, -2);
+    clouds.name = 'clouds';
+    scene.add(clouds);
+
+    /* Instantiate rainbows */
+    const rainbowGeometry = new THREE.RingGeometry(56, 65, 128, 1, 0, Math.PI);
+    const rainbowMaterialEvening = new THREE.ShaderMaterial({
+        uniforms: {
+            opacity: { value: 1.0}
+        },
+        vertexShader: `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            varying vec2 vUv;
+            uniform float opacity;
+
+            vec3 getRainbowColor(float t) {
+        if (t < 0.44) return vec3(0.56, 0.0, 1.0);
+        else if (t < 0.45) return vec3(0.29, 0.0, 0.51);
+        else if (t < 0.46) return vec3(0.0, 0.0, 1.0);
+        else if (t < 0.47) return vec3(0.0, 1.0, 0.0);
+        else if (t < 0.48) return vec3(1.0, 1.0, 0.0);
+        else if (t < 0.49) return vec3(1.0, 0.5, 0.0);
+        else return vec3(1.0, 0.0, 0.0);
+    }
 
 
-// Vytvoríme mesh pre oblaky
-const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
-clouds.position.set(0, -50, -2);
-clouds.name = 'clouds';  // Ensure it's named 'clouds'
-scene.add(clouds);
+            void main() {
+                float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
+                float radius = length(vUv - vec2(0.5));
+                float t = radius;
+
+                vec3 color = getRainbowColor(t);
+                gl_FragColor = vec4(color, opacity);
+            }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+    const rainbowMaterialMorning = new THREE.ShaderMaterial({
+        uniforms: {
+            opacity: { value: 1.0}
+        },
+        vertexShader: `
+            varying vec2 vUv;
+            void main() {
+                vUv = uv;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            varying vec2 vUv;
+            uniform float opacity;
+
+            vec3 getRainbowColor(float t) {
+        if (t < 0.44) return vec3(0.56, 0.0, 1.0);
+        else if (t < 0.45) return vec3(0.29, 0.0, 0.51);
+        else if (t < 0.46) return vec3(0.0, 0.0, 1.0);
+        else if (t < 0.47) return vec3(0.0, 1.0, 0.0);
+        else if (t < 0.48) return vec3(1.0, 1.0, 0.0);
+        else if (t < 0.49) return vec3(1.0, 0.5, 0.0);
+        else return vec3(1.0, 0.0, 0.0);
+    }
 
 
+            void main() {
+                float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
+                float radius = length(vUv - vec2(0.5));
+                float t = radius;
 
+                vec3 color = getRainbowColor(t);
+                gl_FragColor = vec4(color, opacity);
+            }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide,
+        depthWrite: false
+    });
+    const rainbowEvening = new THREE.Mesh(rainbowGeometry, rainbowMaterialEvening);
+    rainbowEvening.rotation.y = 1.56;
+    rainbowEvening.position.set(70, -5, 0);
+    rainbowEvening.name = 'rainbowEvening';
+    scene.add(rainbowEvening);
 
+    const rainbowMorning = new THREE.Mesh(rainbowGeometry, rainbowMaterialMorning);
+    rainbowMorning.rotation.y = 1.56;
+    rainbowMorning.position.set(-70, -5, 0);
+    rainbowMorning.name = 'rainbowMorning';
+    scene.add(rainbowMorning);
 
-
-const rainbowGeometry = new THREE.RingGeometry(56, 65, 128, 1, 0, Math.PI);
-
-const rainbowMaterialEvening = new THREE.ShaderMaterial({
-    uniforms: {
-        opacity: { value: 1.0}
-    },
-    vertexShader: `
-        varying vec2 vUv;
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-        varying vec2 vUv;
-        uniform float opacity;
-
-        vec3 getRainbowColor(float t) {
-    // Čisté pásy: každý rozsah má svoju farbu
-    if (t < 0.44) return vec3(0.56, 0.0, 1.0);
-    else if (t < 0.45) return vec3(0.29, 0.0, 0.51);
-    else if (t < 0.46) return vec3(0.0, 0.0, 1.0);
-    else if (t < 0.47) return vec3(0.0, 1.0, 0.0);
-    else if (t < 0.48) return vec3(1.0, 1.0, 0.0);
-    else if (t < 0.49) return vec3(1.0, 0.5, 0.0);
-    else return vec3(1.0, 0.0, 0.0);
-}
-
-
-        void main() {
-            float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
-            float radius = length(vUv - vec2(0.5));
-            float t = radius; // used as gradient input
-
-            vec3 color = getRainbowColor(t);
-            gl_FragColor = vec4(color, opacity);
-        }
-    `,
-    transparent: true,
-    side: THREE.DoubleSide,
-    depthWrite: false
-});
-const rainbowMaterialMorning = new THREE.ShaderMaterial({
-    uniforms: {
-        opacity: { value: 1.0}
-    },
-    vertexShader: `
-        varying vec2 vUv;
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-        varying vec2 vUv;
-        uniform float opacity;
-
-        vec3 getRainbowColor(float t) {
-    // Čisté pásy: každý rozsah má svoju farbu
-    if (t < 0.44) return vec3(0.56, 0.0, 1.0);
-    else if (t < 0.45) return vec3(0.29, 0.0, 0.51);
-    else if (t < 0.46) return vec3(0.0, 0.0, 1.0);
-    else if (t < 0.47) return vec3(0.0, 1.0, 0.0);
-    else if (t < 0.48) return vec3(1.0, 1.0, 0.0);
-    else if (t < 0.49) return vec3(1.0, 0.5, 0.0);
-    else return vec3(1.0, 0.0, 0.0);
-}
-
-
-        void main() {
-            float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
-            float radius = length(vUv - vec2(0.5));
-            float t = radius; // used as gradient input
-
-            vec3 color = getRainbowColor(t);
-            gl_FragColor = vec4(color, opacity);
-        }
-    `,
-    transparent: true,
-    side: THREE.DoubleSide,
-    depthWrite: false
-});
-
-const rainbowEvening = new THREE.Mesh(rainbowGeometry, rainbowMaterialEvening);
-rainbowEvening.rotation.y = 1.56;
-rainbowEvening.position.set(70, -5, 0); // trochu vyššie
-rainbowEvening.name = 'rainbowEvening';
-
-scene.add(rainbowEvening);
-
-
-const rainbowMorning = new THREE.Mesh(rainbowGeometry, rainbowMaterialMorning);
-rainbowMorning.rotation.y = 1.56;
-rainbowMorning.position.set(-70, -5, 0); // trochu vyššie
-rainbowMorning.name = 'rainbowMorning';
-
-scene.add(rainbowMorning);
-
-
-
-
-    /* light definition */
+    /* Instantiate light */
     light = new THREE.DirectionalLight(0xffff00, 1);
     light.position.set(0, 100, 0);
     scene.add(light);
-    /* light ball */
     const lightSphereGeometry = new THREE.SphereGeometry(10.2, 16, 16);
     const lightSphereMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.7, 0.2) });
-
     lightSphere = new THREE.Mesh(lightSphereGeometry, lightSphereMaterial);
     lightSphere.position.set(0, 2, 0);
     scene.add(lightSphere);
 
+    /* Instantiate sunshine effect */
+    const SunShineGeometry = new THREE.CircleGeometry(800, 800);
+    const SunShineMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+            SunShineStrength: { value: 1.0 }
+        },
+        vertexShader: `
+            varying vec3 vWorldPosition;
+            void main() {
+                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                vWorldPosition = worldPosition.xyz;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vWorldPosition;
+            uniform vec3 lightPosition;
+            uniform float SunShineStrength;
 
+            void main() {
+                float dist = distance(vWorldPosition, lightPosition);
+                float intensity = SunShineStrength * smoothstep(150.0, 0.0, dist);
+                gl_FragColor = vec4(1.0, 1.0, 1.0, intensity);
+            }
+        `,
+        transparent: true,
+        depthWrite: false,
+        depthTest: false,
+    });
+    const SunShine = new THREE.Mesh(SunShineGeometry, SunShineMaterial);
+    SunShine.name = 'SunShine';
+    SunShine.renderOrder = 1;
+    scene.add(SunShine);
 
-// Definícia pre SunShine efekt okolo slnka
-const SunShineGeometry = new THREE.CircleGeometry(800, 800);  // väčší polomer podľa potreby
-const SunShineMaterial = new THREE.ShaderMaterial({
-    uniforms: {
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-        SunShineStrength: { value: 1.0 }
-    },
-    vertexShader: `
-        varying vec3 vWorldPosition;
-        void main() {
-            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-            vWorldPosition = worldPosition.xyz;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
-        }
-    `,
-    fragmentShader: `
-        varying vec3 vWorldPosition;
-        uniform vec3 lightPosition;
-        uniform float SunShineStrength;
+    /* Instantiate */
+    const HaloGeometryRed = new THREE.RingGeometry(25, 25.7, 64);
+    const HaloGeometryBlue = new THREE.RingGeometry(25.5, 25.9, 64);
+    const HaloGeometryPurple = new THREE.RingGeometry(25.8, 26, 64);
+    const HaloGeometryLight = new THREE.RingGeometry(26, 350, 64);
+    const HaloMaterialRed = new THREE.ShaderMaterial({
+        uniforms: {
+            lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+            HaloStrength: { value: 1.0 },
+            opacity: { value: humidityRel / 100.0},
+            cloudDens: { value: cloudsDens }
+        },
+        vertexShader: `
+            varying vec3 vWorldPosition;
+            void main() {
+                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                vWorldPosition = worldPosition.xyz;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vWorldPosition;
+            uniform vec3 lightPosition;
+            uniform float HaloStrength;
+            uniform float opacity;
+            uniform float cloudDens;
 
-        void main() {
+            void main() {
+                float dist = distance(vWorldPosition, lightPosition);
+                float intensity = smoothstep(45.0, 50.0, dist);
+                vec3 haloColor = vec3(1.0, 0.0, 0.0);
+                float cloudMultiplier = 0.0;
+                if(cloudDens <= 1.5 && cloudDens >= 0.5)
+                {
+                    cloudMultiplier = cloudDens - 1.0;
+                    if ( cloudMultiplier < 0.0)
+                        { cloudMultiplier =  cloudMultiplier * -1.0; }
+                    cloudMultiplier = 1.0 - cloudMultiplier;
+                }
+                gl_FragColor = vec4(haloColor * intensity, opacity * 0.05 * cloudMultiplier);
+            }
+        `,
+        transparent: true,
+        depthWrite: false,  
+        depthTest: false,   
+    });
+    const HaloMaterialBlue = new THREE.ShaderMaterial({
+        uniforms: {
+            lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+            HaloStrength: { value: 1.0 },
+            opacity: { value: humidityRel / 100.0},
+            cloudDens: { value: cloudsDens }
+        },
+        vertexShader: `
+            varying vec3 vWorldPosition;
+            void main() {
+                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                vWorldPosition = worldPosition.xyz;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+            }
+        `,
+        fragmentShader: `
+            varying vec3 vWorldPosition;
+            uniform vec3 lightPosition;
+            uniform float HaloStrength;
+            uniform float opacity;
+            uniform float cloudDens;
+
+            void main() {
             float dist = distance(vWorldPosition, lightPosition);
-            float intensity = SunShineStrength * smoothstep(150.0, 0.0, dist);  // väčšie SunShine
-            gl_FragColor = vec4(1.0, 1.0, 1.0, intensity);
-        }
-    `,
-    transparent: true,
-    depthWrite: false,  // Nezapisovať do depth bufferu
-    depthTest: false,   // Vypneme depth test, aby SunShine nebolo orezané inými objektami
-});
-
-// SunShine mesh
-const SunShine = new THREE.Mesh(SunShineGeometry, SunShineMaterial);
-SunShine.name = 'SunShine';
-
-// Nastavenie, aby sa SunShine vykreslovalo pred ostatnými objektmi
-SunShine.renderOrder = 1; // Vyššia hodnota znamená, že sa objekt vykreslí neskôr, teda pred ostatnými
-
-scene.add(SunShine);
-
-const HaloGeometryRed = new THREE.RingGeometry(25, 25.7, 64);
-const HaloGeometryBlue = new THREE.RingGeometry(25.5, 25.9, 64);
-const HaloGeometryPurple = new THREE.RingGeometry(25.8, 26, 64);
-const HaloGeometryLight = new THREE.RingGeometry(26, 350, 64);
-
-const HaloMaterialRed = new THREE.ShaderMaterial({
-    uniforms: {
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-        HaloStrength: { value: 1.0 },
-        opacity: { value: humidityRel / 100.0},
-        cloudDens: { value: cloudsDens }
-    },
-    vertexShader: `
-        varying vec3 vWorldPosition;
-        void main() {
-            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-            vWorldPosition = worldPosition.xyz;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
-        }
-    `,
-    fragmentShader: `varying vec3 vWorldPosition;
-        uniform vec3 lightPosition;
-        uniform float HaloStrength;
-        uniform float opacity;
-        uniform float cloudDens;
-
-void main() {
-    float dist = distance(vWorldPosition, lightPosition);
-
-    // Prechod od čiernej k žltej na okrajoch
-    float intensity = smoothstep(45.0, 50.0, dist);  // Intenzita sa začína pri vnútornom okraji
-
-    // Generovanie žltej farby na okrajoch
-    vec3 haloColor = vec3(1.0, 0.0, 0.0); // Čistá žltá farba
-
-  
+            float intensity = smoothstep(45.0, 50.0, dist);
+            vec3 haloColor = vec3(0.0, 0.0, 1.0);
             float cloudMultiplier = 0.0;
 
-
-            if(cloudDens <= 1.5 && cloudDens >= 0.5)
-            {
-                cloudMultiplier = cloudDens - 1.0;
-                if ( cloudMultiplier < 0.0)
-                    { cloudMultiplier =  cloudMultiplier * -1.0; }
-                cloudMultiplier = 1.0 - cloudMultiplier;
+                    if(cloudDens <= 1.5 && cloudDens >= 0.5)
+                    {
+                        cloudMultiplier = cloudDens - 1.0;
+                        if ( cloudMultiplier < 0.0)
+                            { cloudMultiplier =  cloudMultiplier * -1.0; }
+                        cloudMultiplier = 1.0 - cloudMultiplier;
+                    }
+            gl_FragColor = vec4(haloColor * intensity, opacity * 0.05 * cloudMultiplier);
             }
-
-    // Kombinovanie farby a intenzity
-    gl_FragColor = vec4(haloColor * intensity, opacity * 0.05 * cloudMultiplier); // 1.0 pre plnú nepriehľadnosť
-}
-
-    `,
-    transparent: true,
-    depthWrite: false,  
-    depthTest: false,   
-});
-
-const HaloMaterialBlue = new THREE.ShaderMaterial({
-    uniforms: {
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-        HaloStrength: { value: 1.0 },
-        opacity: { value: humidityRel / 100.0},
-        cloudDens: { value: cloudsDens }
-    },
-    vertexShader: `
-        varying vec3 vWorldPosition;
-        void main() {
-            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-            vWorldPosition = worldPosition.xyz;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
-        }
-    `,
-    fragmentShader: `varying vec3 vWorldPosition;
-uniform vec3 lightPosition;
-uniform float HaloStrength;
-        uniform float opacity;
-        uniform float cloudDens;
-
-void main() {
-    float dist = distance(vWorldPosition, lightPosition);
-
-    // Prechod od čiernej k žltej na okrajoch
-    float intensity = smoothstep(45.0, 50.0, dist);  // Intenzita sa začína pri vnútornom okraji
-
-    // Generovanie žltej farby na okrajoch
-    vec3 haloColor = vec3(0.0, 0.0, 1.0); // Čistá žltá farba
-
-    float cloudMultiplier = 0.0;
-
-            if(cloudDens <= 1.5 && cloudDens >= 0.5)
-            {
-                cloudMultiplier = cloudDens - 1.0;
-                if ( cloudMultiplier < 0.0)
-                    { cloudMultiplier =  cloudMultiplier * -1.0; }
-                cloudMultiplier = 1.0 - cloudMultiplier;
+        `,
+        transparent: true,
+        depthWrite: false,  
+        depthTest: false,   
+    });
+    const HaloMaterialPurple = new THREE.ShaderMaterial({
+        uniforms: {
+            lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+            HaloStrength: { value: 1.0 },
+            opacity: { value: humidityRel / 100.0},
+            cloudDens: { value: cloudsDens }
+        },
+        vertexShader: `
+            varying vec3 vWorldPosition;
+            void main() {
+                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                vWorldPosition = worldPosition.xyz;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
             }
-    // Kombinovanie farby a intenzity
-    gl_FragColor = vec4(haloColor * intensity, opacity * 0.05 * cloudMultiplier); // 1.0 pre plnú nepriehľadnosť
-}
+        `,
+        fragmentShader: `
+            varying vec3 vWorldPosition;
+            uniform vec3 lightPosition;
+            uniform float HaloStrength;
+            uniform float opacity;
+            uniform float cloudDens;
 
-    `,
-    transparent: true,
-    depthWrite: false,  
-    depthTest: false,   
-});
+            void main() {
+                float dist = distance(vWorldPosition, lightPosition);
+                float intensity = smoothstep(45.0, 50.0, dist);
+                vec3 haloColor = vec3(0.6, 0.4, 1.0);
 
-const HaloMaterialPurple = new THREE.ShaderMaterial({
-    uniforms: {
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-        HaloStrength: { value: 1.0 },
-        opacity: { value: humidityRel / 100.0},
-        cloudDens: { value: cloudsDens }
-    },
-    vertexShader: `
-        varying vec3 vWorldPosition;
-        void main() {
-            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-            vWorldPosition = worldPosition.xyz;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
-        }
-    `,
-    fragmentShader: `varying vec3 vWorldPosition;
-uniform vec3 lightPosition;
-uniform float HaloStrength;
-        uniform float opacity;
-        uniform float cloudDens;
+                float cloudMultiplier = 0.0;
 
-void main() {
-    float dist = distance(vWorldPosition, lightPosition);
-
-    // Prechod od čiernej k žltej na okrajoch
-    float intensity = smoothstep(45.0, 50.0, dist);  // Intenzita sa začína pri vnútornom okraji
-
-    // Generovanie žltej farby na okrajoch
-    vec3 haloColor = vec3(0.6, 0.4, 1.0); // Čistá žltá farba
-
-    float cloudMultiplier = 0.0;
-
-            if(cloudDens <= 1.5 && cloudDens >= 0.5)
-            {
-                cloudMultiplier = cloudDens - 1.0;
-                if ( cloudMultiplier < 0.0)
-                    { cloudMultiplier =  cloudMultiplier * -1.0; }
-                cloudMultiplier = 1.0 - cloudMultiplier;
+                if(cloudDens <= 1.5 && cloudDens >= 0.5)
+                {
+                    cloudMultiplier = cloudDens - 1.0;
+                    if ( cloudMultiplier < 0.0)
+                        { cloudMultiplier =  cloudMultiplier * -1.0; }
+                    cloudMultiplier = 1.0 - cloudMultiplier;
+                }
+                gl_FragColor = vec4(haloColor * intensity, opacity * 0.05 * cloudMultiplier);
             }
-    // Kombinovanie farby a intenzity
-    gl_FragColor = vec4(haloColor * intensity, opacity * 0.05 * cloudMultiplier); // 1.0 pre plnú nepriehľadnosť
-}
-
-    `,
-    transparent: true,
-    depthWrite: false,  
-    depthTest: false,   
-});
-
-const HaloMaterialLight = new THREE.ShaderMaterial({
-    uniforms: {
-        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
-        SunShineStrength: { value: 1.0 },
-        opacity: { value: humidityRel / 100.0},
-        cloudDens: { value: cloudsDens }
-    },
-    vertexShader: `
-        varying vec3 vWorldPosition;
-        void main() {
-            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-            vWorldPosition = worldPosition.xyz;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
-        }
-    `,
-    fragmentShader: `
-        varying vec3 vWorldPosition;
-        uniform vec3 lightPosition;
-        uniform float SunShineStrength;
-        uniform float opacity;
-        uniform float cloudDens;
-
-        void main() {
-            float dist = distance(vWorldPosition, lightPosition);
-            float intensity = SunShineStrength * smoothstep(150.0, 0.0, dist);
-            float cloudMultiplier = 0.0;
-
-            if(cloudDens <= 1.5 && cloudDens >= 0.5)
-            {
-                cloudMultiplier = cloudDens - 1.0;
-                if ( cloudMultiplier < 0.0)
-                    { cloudMultiplier =  cloudMultiplier * -1.0; }
-                cloudMultiplier = 1.0 - cloudMultiplier;
+        `,
+        transparent: true,
+        depthWrite: false,  
+        depthTest: false,   
+    });
+    const HaloMaterialLight = new THREE.ShaderMaterial({
+        uniforms: {
+            lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+            SunShineStrength: { value: 1.0 },
+            opacity: { value: humidityRel / 100.0},
+            cloudDens: { value: cloudsDens }
+        },
+        vertexShader: `
+            varying vec3 vWorldPosition;
+            void main() {
+                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                vWorldPosition = worldPosition.xyz;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
             }
-            gl_FragColor = vec4(1.0, 1.0, 1.0, intensity * opacity *  cloudMultiplier);
-        }
-    `,
-    transparent: true,
-    depthWrite: false,  // Nezapisovať do depth bufferu
-    depthTest: false,   // Vypneme depth test, aby SunShine nebolo orezané inými objektami
-});
+        `,
+        fragmentShader: `
+            varying vec3 vWorldPosition;
+            uniform vec3 lightPosition;
+            uniform float SunShineStrength;
+            uniform float opacity;
+            uniform float cloudDens;
 
+            void main() {
+                float dist = distance(vWorldPosition, lightPosition);
+                float intensity = SunShineStrength * smoothstep(150.0, 0.0, dist);
+                float cloudMultiplier = 0.0;
 
-// Vytvorenie mesh pre Halo
-const HaloRed = new THREE.Mesh(HaloGeometryRed, HaloMaterialRed);
-const HaloBlue = new THREE.Mesh(HaloGeometryBlue, HaloMaterialBlue);
-const HaloPurple = new THREE.Mesh(HaloGeometryPurple, HaloMaterialPurple);
-const HaloLight = new THREE.Mesh(HaloGeometryLight, HaloMaterialLight);
-HaloRed.name = 'HaloRed';
-HaloBlue.name = 'HaloBlue';
-HaloPurple.name = 'HaloPurple';
-HaloLight.name = 'HaloLight';
+                if(cloudDens <= 1.5 && cloudDens >= 0.5)
+                {
+                    cloudMultiplier = cloudDens - 1.0;
+                    if ( cloudMultiplier < 0.0)
+                        { cloudMultiplier =  cloudMultiplier * -1.0; }
+                    cloudMultiplier = 1.0 - cloudMultiplier;
+                }
+                gl_FragColor = vec4(1.0, 1.0, 1.0, intensity * opacity *  cloudMultiplier);
+            }
+        `,
+        transparent: true,
+        depthWrite: false,
+        depthTest: false,
+    });
+    const HaloRed = new THREE.Mesh(HaloGeometryRed, HaloMaterialRed);
+    const HaloBlue = new THREE.Mesh(HaloGeometryBlue, HaloMaterialBlue);
+    const HaloPurple = new THREE.Mesh(HaloGeometryPurple, HaloMaterialPurple);
+    const HaloLight = new THREE.Mesh(HaloGeometryLight, HaloMaterialLight);
+    HaloRed.name = 'HaloRed';
+    HaloBlue.name = 'HaloBlue';
+    HaloPurple.name = 'HaloPurple';
+    HaloLight.name = 'HaloLight';
+    HaloRed.renderOrder = 1; 
+    HaloBlue.renderOrder = 1; 
+    HaloPurple.renderOrder = 1; 
+    HaloLight.renderOrder = 1;
+    scene.add(HaloRed);
+    scene.add(HaloBlue);
+    scene.add(HaloPurple);
+    scene.add(HaloLight);
 
-// Nastavenie pre vykresľovanie Halo objektu
-HaloRed.renderOrder = 1; 
-HaloBlue.renderOrder = 1; 
-HaloPurple.renderOrder = 1; 
-HaloLight.renderOrder = 1; 
-
-scene.add(HaloRed);
-scene.add(HaloBlue);
-scene.add(HaloPurple);
-scene.add(HaloLight);
-
-
-
-
-
-
-
-
-
-    /* rain definition */
-    const rainCount = 100000; // Počet kvapiek dažďa
+    /* Instantiate rain */
+    const rainCount = 100000;
     const rainGeometry = new THREE.BufferGeometry();
-    const rainPositions = new Float32Array(rainCount * 3); // x, y, z pre každú kvapku
-
+    const rainPositions = new Float32Array(rainCount * 3);
     for (let i = 0; i < rainCount; i++) {
-        rainPositions[i * 3] = (Math.random() - 0.5) * sceneSize * 2;    // x
-        rainPositions[i * 3 + 1] = Math.random() * 50 + 10;              // y
-        rainPositions[i * 3 + 2] = (Math.random() - 0.5) * sceneSize * 2; // z
+        rainPositions[i * 3] = (Math.random() - 0.5) * sceneSize * 2;
+        rainPositions[i * 3 + 1] = Math.random() * 50 + 10;
+        rainPositions[i * 3 + 2] = (Math.random() - 0.5) * sceneSize * 2;
     }
-
     rainGeometry.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
-
     const rainMaterial = new THREE.PointsMaterial({
         color: 0xaaaaaa,
         size: 0.1,
         transparent: true,
         opacity: 0.6
     });
-
     const rain = new THREE.Points(rainGeometry, rainMaterial);
     rain.name = 'rain';
-    rain.visible = false; // Na začiatku dážď vypnutý
-
+    rain.visible = false;
     scene.add(rain);
 
-
-    /* scene */
+    /* Instantiate ground */
     const groundGeometry = new THREE.CircleGeometry(sceneSize, 64);
     const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x228A22 });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -576,88 +488,72 @@ scene.add(HaloLight);
     ground.position.y = -0.5;
     scene.add(ground);
     
-
     return scene;
 }
 
-export function updateRainLevel(rainIntensity, scene) {
+export function updateRainLevel(rainIntensity, scene)
+{
     const rain = scene.getObjectByName('rain');
     if (!rain) return;
 
     rain.visible = rainIntensity > 0.0;
 
-    if (rain.material && rain.material.opacity !== undefined) {
+    if (rain.material && rain.material.opacity !== undefined)
+    {
         rain.material.opacity = Math.min(0.2 + rainIntensity * 0.8, 1.0);
     }
 
-    // Počet aktívnych kvapiek (napr. max 100k * intenzita)
     const maxRainCount = 10000;
     const activeRainCount = Math.floor(rainIntensity * maxRainCount);
-
+    
+    /* randomize particle positions */
     const positions = rain.geometry.attributes.position.array;
 
-    for (let i = 0; i < activeRainCount * 3; i += 3) {
+    for (let i = 0; i < activeRainCount * 3; i += 3)
+    {
         positions[i + 1] -= 0.5 + rainIntensity * 1.5;
 
-        if (positions[i + 1] < 0) {
+        if (positions[i + 1] < 0)
+        {
             positions[i + 1] = Math.random() * 50 + 10;
         }
     }
-    rain.geometry.setDrawRange(0, activeRainCount);
 
+    /* draw limiter */
+    rain.geometry.setDrawRange(0, activeRainCount);
     rain.geometry.attributes.position.needsUpdate = true;
 }
 
-
-
-export function updateSkyColor(time, scene) {
-    // Získame referenciu na sky mesh z scény
+export function updateSkyColor(time, scene)
+{
     const sky = scene.children.find(child => child.type === 'Mesh' && child.geometry.type === 'SphereGeometry');
-
-    // Ak nájdeme sky mesh, aktualizujeme jeho 'time' uniform
-    if (sky && sky.material && sky.material.uniforms) {
-        sky.material.uniforms.time.value = time; // nastavíme nový čas
+    if (sky && sky.material && sky.material.uniforms) 
+    {
+        sky.material.uniforms.time.value = time;
     }
 }
 
-/* Aktualizácia pozície slnka podľa času */
 export function updateSunPosition(time, scene)
 {
-
     if (lightSphere && light)
     {
         const radius = 105;
-
-        // Azimut (θ) sa pohybuje od 0 po 2π počas denného cyklu
-        const angle = (time) * Math.PI / 12;  // Čas sa upraví tak, aby bol od 6:00 (0) do 18:00 (2π)
+        const angle = (time) * Math.PI / 12;
         time = time;
-
-        // Výška (φ) slnka sa mení podľa času (stúpa od 6:00 do 12:00, potom klesá)
-        const height = Math.max(0.1, Math.sin(Math.PI * (time) / 12));  // Používame sínusovú funkciu na výšku
-
-        // Výpočet pozície slnka v 3D priestore
+        const height = Math.max(0.1, Math.sin(Math.PI * (time) / 12));
         const x = radius * Math.cos(angle);
-        const y = radius * Math.sin(angle);  // Y pozícia slnka
-        const z = height;                    // Z pozícia slnka (dynamická výška)
-
-        // Nastavenie pozície slnka
+        const y = radius * Math.sin(angle);
+        const z = height;
         lightSphere.position.set(x, y, z);
         light.position.set(x + 30, y + 30, z + 30);
-
-        // Nastavenie intenzity svetla podľa času (najvyššia intenzita na poludnie)
-        // Pre interval [0, 12] prechádza od 0 do 2 (rastie až na poludnie), potom späť na 0
         let timeIntensity = Math.sin(Math.PI * (time / 12)) * 2.0 + 2.0; 
-
-        // Dynamická zmena intenzity svetla podľa hustoty oblakov (cloudDensity)
-        // Ak je cloudDensity vyššia, svetlo bude slabšie
-        let cloudFactor = 1.0 - (cloudsDens / 2.0); // cloudDens je medzi 0 a 2, takže 0 bude zodpovedať 1 (plné svetlo), a 2 bude zodpovedať 0 (tma)
-
-        // Nastavenie intenzity svetla na základe času a cloudDensity
+        let cloudFactor = 1.0 - (cloudsDens / 2.0);
         light.intensity = timeIntensity * cloudFactor + 0.5;
     }
 }
 
-export function updateRainbowVisibility(time, okta, rain, scene) {
+export function updateRainbowVisibility(time, okta, rain, scene)
+{
     const rainbowMorning = scene.getObjectByName('rainbowMorning');
     const rainbowEvening = scene.getObjectByName('rainbowEvening');
 
@@ -701,20 +597,18 @@ export function updateRainbowVisibility(time, okta, rain, scene) {
     rainbowEvening.material.uniforms.opacity.value = finalOpacityEvening;
 }
 
-export function updateClouds(time, scene, okta) {
-    // Find the cloud mesh (since it's the only one)
+export function updateClouds(time, scene, okta)
+{
     const cloud = scene.children.find(child => child.name === 'clouds');
-
     const HaloRed = scene.children.find(child => child.name === 'HaloRed');
     const HaloBlue = scene.children.find(child => child.name === 'HaloBlue');
     const HaloPurple = scene.children.find(child => child.name === 'HaloPurple');
     const HaloLight = scene.children.find(child => child.name === 'HaloLight');
 
-    // If the cloud mesh is found and it has the expected material and uniforms
-    if (cloud && cloud.material && cloud.material.uniforms) {
-        // Update the time and cloud density values in the shader uniforms
+    if (cloud && cloud.material && cloud.material.uniforms)
+    {
         cloud.material.uniforms.time.value = time;
-        cloud.material.uniforms.cloudDensity.value = okta / 4;  // Assuming okta controls cloud density
+        cloud.material.uniforms.cloudDensity.value = okta / 4;
         cloudsDens = okta / 4;
         HaloRed.material.uniforms.cloudDens.value = cloudsDens;
         HaloBlue.material.uniforms.cloudDens.value = cloudsDens;
@@ -722,7 +616,9 @@ export function updateClouds(time, scene, okta) {
         HaloLight.material.uniforms.cloudDens.value = cloudsDens;
     }
 }
-export function updateSunShineEffect(time, scene, camera, humidity) {
+
+export function updateSunShineEffect(time, scene, camera, humidity)
+{
     humidityRel = humidity;
     
     const SunShine = scene.children.find(child => child.name === 'SunShine');
@@ -730,10 +626,9 @@ export function updateSunShineEffect(time, scene, camera, humidity) {
     const HaloBlue = scene.children.find(child => child.name === 'HaloBlue');
     const HaloPurple = scene.children.find(child => child.name === 'HaloPurple');
     const HaloLight = scene.children.find(child => child.name === 'HaloLight');
-    // Získame referenciu na SunShine mesh (už vieme, že je len jeden)
 
-    if (SunShine && SunShine.material && SunShine.material.uniforms) {
-        // Aktualizujeme pozíciu SunShine efektu podľa pozície svetla (slnka)
+    if (SunShine && SunShine.material && SunShine.material.uniforms)
+    {
         SunShine.lookAt(camera.position);
         SunShine.position.copy(lightSphere.position);
 
@@ -757,14 +652,5 @@ export function updateSunShineEffect(time, scene, camera, humidity) {
         HaloBlue.material.uniforms.cloudDens.value = cloudsDens;
         HaloPurple.material.uniforms.cloudDens.value = cloudsDens;
         HaloLight.material.uniforms.cloudDens.value = cloudsDens;
-
-
-
-        // Môžeme nastaviť dynamickú intenzitu SunShine efektu podľa času
-        //const SunShineIntensity = Math.sin(Math.PI * (time / 12)) * 0.5 + 0.5;  // Dynamická intenzita na základe času
-        //SunShine.material.uniforms.SunShineStrength.value = SunShineIntensity;  // Nastavenie intenzity SunShine
     }
-    else
-        console.log("kokot");
-
 }

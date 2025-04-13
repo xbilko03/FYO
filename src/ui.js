@@ -6,15 +6,15 @@
 * Author        : Jozef Bilko (xbilko03)
 */
 
-
-export let timeSliderValue = 6; // Defaultná hodnota
+/* default global vars */
+export let timeSliderValue = 6;
 export let cloudsSliderValue = 0;
 export let humiditySliderValue = 0;
 export let rainSliderValue = 0;
 
 export function createUI()
 {
-    /* window definition */
+    /* window */
     const uiWindow = document.createElement('div');
     uiWindow.style.position = 'absolute';
     uiWindow.style.top = '20px';
@@ -27,12 +27,12 @@ export function createUI()
     uiWindow.style.fontSize = '16px';
     uiWindow.style.zIndex = '1000';
 
-    /* header definition */
+    /* header */
     const heading = document.createElement('h3');
     heading.textContent = 'Movement';
     uiWindow.appendChild(heading);
 
-    /* list of words */
+    /* list of controls */
     const list = document.createElement('ul');
     const items = ['Mouse - Look around', 'WASD - Move', 'ESC - Return mouse'];
 
@@ -49,27 +49,27 @@ export function createUI()
     spacer.style.height = '15px'
     uiWindow.appendChild(spacer);
 
-    /* light slider */
-    const timeSliderLabel = document.createElement('label');
-    timeSliderLabel.textContent = 'Clouds [octet]: ';
-    timeSliderLabel.style.marginBottom = '5px';
-    uiWindow.appendChild(timeSliderLabel);
+    /* cloud slider */
+    const cloudSliderLabel = document.createElement('label');
+    cloudSliderLabel.textContent = 'Clouds [octet]: ';
+    cloudSliderLabel.style.marginBottom = '5px';
+    uiWindow.appendChild(cloudSliderLabel);
 
-    const timeSlider = document.createElement('input');
-    timeSlider.type = 'range';
-    timeSlider.min = '0';
-    timeSlider.max = '8';
-    timeSlider.value = '0';
-    timeSlider.style.width = '100%';
-    uiWindow.appendChild(timeSlider);
+    const cloudSlider = document.createElement('input');
+    cloudSlider.type = 'range';
+    cloudSlider.min = '0';
+    cloudSlider.max = '8';
+    cloudSlider.value = '0';
+    cloudSlider.style.width = '100%';
+    uiWindow.appendChild(cloudSlider);
 
-    const timeValue = document.createElement('span');
-    timeValue.textContent = ` ${timeSlider.value}`;
-    uiWindow.appendChild(timeValue);
+    const cloudValue = document.createElement('span');
+    cloudValue.textContent = ` ${cloudSlider.value}`;
+    uiWindow.appendChild(cloudValue);
 
-    timeSlider.addEventListener('input', (e) =>
+    cloudSlider.addEventListener('input', (e) =>
     {
-        timeValue.textContent = ` ${e.target.value}`;
+        cloudValue.textContent = ` ${e.target.value}`;
         cloudsSliderValue = parseFloat(e.target.value);
     });
 
@@ -79,24 +79,24 @@ export function createUI()
     uiWindow.appendChild(spacer2);
 
     /* time slider */
-    const lightSliderLabel = document.createElement('label');
-    lightSliderLabel.textContent = 'Time [hours]: ';
-    lightSliderLabel.style.marginBottom = '5px';
-    uiWindow.appendChild(lightSliderLabel);
+    const timeSliderLabel = document.createElement('label');
+    timeSliderLabel.textContent = 'Time [hours]: ';
+    timeSliderLabel.style.marginBottom = '5px';
+    uiWindow.appendChild(timeSliderLabel);
 
-    const lightSlider = document.createElement('input');
-    lightSlider.type = 'range';
-    lightSlider.min = '6';
-    lightSlider.max = '18';
-    lightSlider.value = '6';
-    lightSlider.style.width = '100%';
-    uiWindow.appendChild(lightSlider);
+    const timeSlider = document.createElement('input');
+    timeSlider.type = 'range';
+    timeSlider.min = '6';
+    timeSlider.max = '18';
+    timeSlider.value = '6';
+    timeSlider.style.width = '100%';
+    uiWindow.appendChild(timeSlider);
 
     const lightValue = document.createElement('span');
-    lightValue.textContent = ` ${lightSlider.value}`;
+    lightValue.textContent = ` ${timeSlider.value}`;
     uiWindow.appendChild(lightValue);
 
-    lightSlider.addEventListener('input', (e) => {
+    timeSlider.addEventListener('input', (e) => {
         lightValue.textContent = ` ${e.target.value}`;
         timeSliderValue = parseFloat(e.target.value);
     });
@@ -156,6 +156,7 @@ export function createUI()
         rainValue.textContent = ` ${e.target.value}`;
         rainSliderValue = parseFloat(e.target.value);
 
+        /* default minimum values defined for rain levels */
         if(rainSliderValue == 1)
             {
                 if(humiditySliderValue < 60)
@@ -166,9 +167,9 @@ export function createUI()
                 }
                 if(cloudsSliderValue < 3)
                 {
-                    timeValue.textContent = ` ${3}`;
+                    cloudValue.textContent = ` ${3}`;
                     cloudsSliderValue = 3;
-                    timeSlider.value = '3';
+                    cloudSlider.value = '3';
                 }
             }
             else 
@@ -182,9 +183,9 @@ export function createUI()
                 }
                 if(cloudsSliderValue < 5)
                 {
-                    timeValue.textContent = ` ${5}`;
+                    cloudValue.textContent = ` ${5}`;
                     cloudsSliderValue = 5;
-                    timeSlider.value = '5';
+                    cloudSlider.value = '5';
                 }
             }
             else 
@@ -198,13 +199,13 @@ export function createUI()
                 }
                 if(cloudsSliderValue < 7)
                 {
-                    timeValue.textContent = ` ${7}`;
+                    cloudValue.textContent = ` ${7}`;
                     cloudsSliderValue = 7;
-                    timeSlider.value = '7';
+                    cloudSlider.value = '7';
                 }
             }
     });
 
-    /* append to doc */
+    /* finish */
     document.body.appendChild(uiWindow);
 }
