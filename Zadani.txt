@@ -3,11 +3,15 @@ Atmosférická optika, duha, jevy halo, barva oblohy. (Obsazeno)
 Projekt se předkládá v elektronické formě, vizualizace ve formě aplikace, která může být předvedena pomocí standardních nástrojů Windows, vč. zdrojových souborů. 
 
 
+rainbow picture zdroj
+https://www.3doptix.com/academy-post/rainbow/
+
+
+
+
 Struktura projektu
 
 Téma projektu je zařazeno do širšího rámce optiky. (např. projekt "Gradientní čočky" se zařadí do "Paprsková optika, optická dráha, zobrazování lomem ", příp. "Paprsková optika, Optické přístroje".
-
-
 
 Téma: Atmosférická optika, duha, jevy halo, barva oblohy.
 

@@ -24,7 +24,7 @@ export function createScene(sceneSize)
     const skyGeometry = new THREE.SphereGeometry(sceneSize, 32, 32);
     const skyMaterial = new THREE.ShaderMaterial({
         uniforms: { 
-            time: { value: time } // inicializujeme time na hodnotu 12
+            time: { value: time }
         },
         vertexShader: `varying vec3 vWorldPosition;
         void main() {
@@ -61,7 +61,7 @@ export function createScene(sceneSize)
     scene.add(sky);
     
     /* clouds definition */
-    const cloudGeometry = new THREE.SphereGeometry(sceneSize + 5, 32, 32);
+    const cloudGeometry = new THREE.SphereGeometry(sceneSize + 7, 32, 32);
     const cloudMaterial = new THREE.ShaderMaterial({
         uniforms: { 
             time: { value: time },
@@ -159,19 +159,106 @@ scene.add(clouds);
 
 
 
+const rainbowGeometry = new THREE.RingGeometry(56, 65, 128, 1, 0, Math.PI);
 
-    /* rainbow definition */
-    const rainbowGeometry = new THREE.RingGeometry(1.5, 2, 64, 1, 0, 2 * Math.PI);
-    const rainbowMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        side: THREE.DoubleSide,
-        transparent: true,
-        opacity: 0.8
-    });
-    const rainbow = new THREE.Mesh(rainbowGeometry, rainbowMaterial);
-    rainbow.rotation.x = Math.PI / 2;
-    rainbow.position.set(0, 1, -2);
-    scene.add(rainbow);
+const rainbowMaterialEvening = new THREE.ShaderMaterial({
+    uniforms: {
+        opacity: { value: 1.0}
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        varying vec2 vUv;
+        uniform float opacity;
+
+        vec3 getRainbowColor(float t) {
+    // Čisté pásy: každý rozsah má svoju farbu
+    if (t < 0.44) return vec3(0.56, 0.0, 1.0);
+    else if (t < 0.45) return vec3(0.29, 0.0, 0.51);
+    else if (t < 0.46) return vec3(0.0, 0.0, 1.0);
+    else if (t < 0.47) return vec3(0.0, 1.0, 0.0);
+    else if (t < 0.48) return vec3(1.0, 1.0, 0.0);
+    else if (t < 0.49) return vec3(1.0, 0.5, 0.0);
+    else return vec3(1.0, 0.0, 0.0);
+}
+
+
+        void main() {
+            float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
+            float radius = length(vUv - vec2(0.5));
+            float t = radius; // used as gradient input
+
+            vec3 color = getRainbowColor(t);
+            gl_FragColor = vec4(color, opacity);
+        }
+    `,
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false
+});
+const rainbowMaterialMorning = new THREE.ShaderMaterial({
+    uniforms: {
+        opacity: { value: 1.0}
+    },
+    vertexShader: `
+        varying vec2 vUv;
+        void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+    `,
+    fragmentShader: `
+        varying vec2 vUv;
+        uniform float opacity;
+
+        vec3 getRainbowColor(float t) {
+    // Čisté pásy: každý rozsah má svoju farbu
+    if (t < 0.44) return vec3(0.56, 0.0, 1.0);
+    else if (t < 0.45) return vec3(0.29, 0.0, 0.51);
+    else if (t < 0.46) return vec3(0.0, 0.0, 1.0);
+    else if (t < 0.47) return vec3(0.0, 1.0, 0.0);
+    else if (t < 0.48) return vec3(1.0, 1.0, 0.0);
+    else if (t < 0.49) return vec3(1.0, 0.5, 0.0);
+    else return vec3(1.0, 0.0, 0.0);
+}
+
+
+        void main() {
+            float angle = atan(vUv.y - 0.5, vUv.x - 0.5);
+            float radius = length(vUv - vec2(0.5));
+            float t = radius; // used as gradient input
+
+            vec3 color = getRainbowColor(t);
+            gl_FragColor = vec4(color, opacity);
+        }
+    `,
+    transparent: true,
+    side: THREE.DoubleSide,
+    depthWrite: false
+});
+
+const rainbowEvening = new THREE.Mesh(rainbowGeometry, rainbowMaterialEvening);
+rainbowEvening.rotation.y = 1.56;
+rainbowEvening.position.set(70, -5, 0); // trochu vyššie
+rainbowEvening.name = 'rainbowEvening';
+
+scene.add(rainbowEvening);
+
+
+const rainbowMorning = new THREE.Mesh(rainbowGeometry, rainbowMaterialMorning);
+rainbowMorning.rotation.y = 1.56;
+rainbowMorning.position.set(-70, -5, 0); // trochu vyššie
+rainbowMorning.name = 'rainbowMorning';
+
+scene.add(rainbowMorning);
+
+
+
 
     /* light definition */
     light = new THREE.DirectionalLight(0xffff00, 1);
@@ -446,6 +533,41 @@ scene.add(HaloBlue);
 scene.add(HaloPurple);
 scene.add(HaloLight);
 
+
+
+
+
+
+
+
+
+    /* rain definition */
+    const rainCount = 100000; // Počet kvapiek dažďa
+    const rainGeometry = new THREE.BufferGeometry();
+    const rainPositions = new Float32Array(rainCount * 3); // x, y, z pre každú kvapku
+
+    for (let i = 0; i < rainCount; i++) {
+        rainPositions[i * 3] = (Math.random() - 0.5) * sceneSize * 2;    // x
+        rainPositions[i * 3 + 1] = Math.random() * 50 + 10;              // y
+        rainPositions[i * 3 + 2] = (Math.random() - 0.5) * sceneSize * 2; // z
+    }
+
+    rainGeometry.setAttribute('position', new THREE.BufferAttribute(rainPositions, 3));
+
+    const rainMaterial = new THREE.PointsMaterial({
+        color: 0xaaaaaa,
+        size: 0.1,
+        transparent: true,
+        opacity: 0.6
+    });
+
+    const rain = new THREE.Points(rainGeometry, rainMaterial);
+    rain.name = 'rain';
+    rain.visible = false; // Na začiatku dážď vypnutý
+
+    scene.add(rain);
+
+
     /* scene */
     const groundGeometry = new THREE.CircleGeometry(sceneSize, 64);
     const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x228A22 });
@@ -457,6 +579,37 @@ scene.add(HaloLight);
 
     return scene;
 }
+
+export function updateRainLevel(rainIntensity, scene) {
+    const rain = scene.getObjectByName('rain');
+    if (!rain) return;
+
+    rain.visible = rainIntensity > 0.0;
+
+    if (rain.material && rain.material.opacity !== undefined) {
+        rain.material.opacity = Math.min(0.2 + rainIntensity * 0.8, 1.0);
+    }
+
+    // Počet aktívnych kvapiek (napr. max 100k * intenzita)
+    const maxRainCount = 10000;
+    const activeRainCount = Math.floor(rainIntensity * maxRainCount);
+
+    const positions = rain.geometry.attributes.position.array;
+
+    for (let i = 0; i < activeRainCount * 3; i += 3) {
+        positions[i + 1] -= 0.5 + rainIntensity * 1.5;
+
+        if (positions[i + 1] < 0) {
+            positions[i + 1] = Math.random() * 50 + 10;
+        }
+    }
+    rain.geometry.setDrawRange(0, activeRainCount);
+
+    rain.geometry.attributes.position.needsUpdate = true;
+}
+
+
+
 export function updateSkyColor(time, scene) {
     // Získame referenciu na sky mesh z scény
     const sky = scene.children.find(child => child.type === 'Mesh' && child.geometry.type === 'SphereGeometry');
@@ -466,6 +619,7 @@ export function updateSkyColor(time, scene) {
         sky.material.uniforms.time.value = time; // nastavíme nový čas
     }
 }
+
 /* Aktualizácia pozície slnka podľa času */
 export function updateSunPosition(time, scene)
 {
@@ -501,6 +655,50 @@ export function updateSunPosition(time, scene)
         // Nastavenie intenzity svetla na základe času a cloudDensity
         light.intensity = timeIntensity * cloudFactor + 0.5;
     }
+}
+
+export function updateRainbowVisibility(time, okta, rain, scene) {
+    const rainbowMorning = scene.getObjectByName('rainbowMorning');
+    const rainbowEvening = scene.getObjectByName('rainbowEvening');
+
+    if (!rainbowMorning || !rainbowEvening) return;
+
+    let finalOpacityEvening = 0.0;
+    let finalOpacityMorning = 0.0;
+
+    if(rain > 0.0)
+    {
+        if(okta < 7.0)
+        {
+            if(time < 9.0)
+            {
+                finalOpacityMorning = 1 - okta / 8.0;
+                finalOpacityMorning = finalOpacityMorning / 4.0;
+
+                if(time > 7.0)
+                    rainbowMorning.position.y = -50;
+                else if(time > 6.0)
+                    rainbowMorning.position.y = -30;
+                else
+                    rainbowMorning.position.y = -10;
+            }
+            else if(time > 15.0)
+            {
+                finalOpacityEvening = 1 - okta / 8.0;
+                finalOpacityEvening = finalOpacityEvening / 4.0;
+
+                if(time < 17.0)
+                    rainbowEvening.position.y = -50;
+                else if(time < 18.0)
+                    rainbowEvening.position.y = -30;
+                else
+                    rainbowEvening.position.y = -10;
+            }
+        }
+    }
+
+    rainbowMorning.material.uniforms.opacity.value = finalOpacityMorning;
+    rainbowEvening.material.uniforms.opacity.value = finalOpacityEvening;
 }
 
 export function updateClouds(time, scene, okta) {

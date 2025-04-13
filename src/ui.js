@@ -10,6 +10,7 @@
 export let timeSliderValue = 6; // Defaultná hodnota
 export let cloudsSliderValue = 0;
 export let humiditySliderValue = 0;
+export let rainSliderValue = 0;
 
 export function createUI()
 {
@@ -105,7 +106,7 @@ export function createUI()
     spacer3.style.height = '15px';
     uiWindow.appendChild(spacer3);
 
-    /* time slider */
+    /* humidity slider */
     const humiditySliderLabel = document.createElement('label');
     humiditySliderLabel.textContent = 'Relative Humidity [%]: ';
     humiditySliderLabel.style.marginBottom = '5px';
@@ -119,15 +120,90 @@ export function createUI()
     humiditySlider.style.width = '100%';
     uiWindow.appendChild(humiditySlider);
 
-    const humiditytValue = document.createElement('span');
-    humiditytValue.textContent = ` ${humiditySlider.value}`;
-    uiWindow.appendChild(humiditytValue);
+    const humidityValue = document.createElement('span');
+    humidityValue.textContent = ` ${humiditySlider.value}`;
+    uiWindow.appendChild(humidityValue);
 
     humiditySlider.addEventListener('input', (e) => {
-        humiditytValue.textContent = ` ${e.target.value}`;
+        humidityValue.textContent = ` ${e.target.value}`;
         humiditySliderValue = parseFloat(e.target.value);
     });
 
+    /* space between sliders */
+    const spacer4 = document.createElement('div');
+    spacer4.style.height = '15px';
+    uiWindow.appendChild(spacer4);
+
+    /* rain slider */
+    const rainSliderLabel = document.createElement('label');
+    rainSliderLabel.textContent = 'Rain Level: ';
+    rainSliderLabel.style.marginBottom = '5px';
+    uiWindow.appendChild(rainSliderLabel);
+
+    const rainSlider = document.createElement('input');
+    rainSlider.type = 'range';
+    rainSlider.min = '0';
+    rainSlider.max = '3';
+    rainSlider.value = '0';
+    rainSlider.style.width = '100%';
+    uiWindow.appendChild(rainSlider);
+
+    const rainValue = document.createElement('span');
+    rainValue.textContent = ` ${rainSlider.value}`;
+    uiWindow.appendChild(rainValue);
+
+    rainSlider.addEventListener('input', (e) => {
+        rainValue.textContent = ` ${e.target.value}`;
+        rainSliderValue = parseFloat(e.target.value);
+
+        if(rainSliderValue == 1)
+            {
+                if(humiditySliderValue < 60)
+                {
+                    humidityValue.textContent = ` ${60}`;
+                    humiditySliderValue = 60;
+                    humiditySlider.value = '60';
+                }
+                if(cloudsSliderValue < 3)
+                {
+                    timeValue.textContent = ` ${3}`;
+                    cloudsSliderValue = 3;
+                    timeSlider.value = '3';
+                }
+            }
+            else 
+            if(rainSliderValue == 2)
+            {
+                if(humiditySliderValue < 75)
+                {
+                    humidityValue.textContent = ` ${75}`;
+                    humiditySliderValue = 75;
+                    humiditySlider.value = '75';
+                }
+                if(cloudsSliderValue < 5)
+                {
+                    timeValue.textContent = ` ${5}`;
+                    cloudsSliderValue = 5;
+                    timeSlider.value = '5';
+                }
+            }
+            else 
+            if(rainSliderValue == 3)
+            {
+                if(humiditySliderValue < 85)
+                {
+                    humidityValue.textContent = ` ${85}`;
+                    humiditySliderValue = 85;
+                    humiditySlider.value = '85';
+                }
+                if(cloudsSliderValue < 7)
+                {
+                    timeValue.textContent = ` ${7}`;
+                    cloudsSliderValue = 7;
+                    timeSlider.value = '7';
+                }
+            }
+    });
 
     /* append to doc */
     document.body.appendChild(uiWindow);

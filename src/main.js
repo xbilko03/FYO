@@ -6,9 +6,9 @@
 * Author        : Jozef Bilko (xbilko03)
 */
 import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.174.0/build/three.module.js';
-import { createScene, updateSkyColor, updateSunPosition, updateClouds, updateSunShineEffect } from './scene.js';
+import { createScene, updateSkyColor, updateSunPosition, updateClouds, updateSunShineEffect, updateRainLevel, updateRainbowVisibility } from './scene.js';
 import { setupControls } from './controls.js';
-import { createUI, timeSliderValue, cloudsSliderValue, humiditySliderValue } from './ui.js';
+import { createUI, timeSliderValue, cloudsSliderValue, humiditySliderValue, rainSliderValue } from './ui.js';
 
 /* init scene */
 const sceneSize = 100;
@@ -28,7 +28,7 @@ const moveSpeed = 0.1;
 
 /* box definition */
 const minX = -10, maxX = 10;
-const minY = 2, maxY = 20;
+const minY = 2, maxY = 5;
 const minZ = -10, maxZ = 10;
 
 /* allows the window to be resized */
@@ -57,13 +57,14 @@ function animate()
     const time = timeSliderValue;
     const cloudiness = cloudsSliderValue;
     const humidity = humiditySliderValue;
+    const rain = rainSliderValue;
 
-    // Zavoláme updateSkyColor, aby sme zmenili farbu oblohy podľa času
-    updateClouds(time, scene, cloudiness);  // Aktualizujeme oblačnosť
+    updateClouds(time, scene, cloudiness);
     updateSkyColor(time, scene);
     updateSunPosition(time  - 6, scene);
     updateSunShineEffect(time, scene, camera, humidity);
-
+    updateRainLevel(rain, scene);
+    updateRainbowVisibility(time, cloudiness, rain, scene);
 
     /* restrain movement defined by a box */
     if (camera.position.x < minX) camera.position.x = minX;
