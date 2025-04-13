@@ -9,6 +9,7 @@
 
 export let timeSliderValue = 6; // Defaultná hodnota
 export let cloudsSliderValue = 0;
+export let humiditySliderValue = 0;
 
 export function createUI()
 {
@@ -98,6 +99,35 @@ export function createUI()
         lightValue.textContent = ` ${e.target.value}`;
         timeSliderValue = parseFloat(e.target.value);
     });
+
+    /* space between sliders */
+    const spacer3 = document.createElement('div');
+    spacer3.style.height = '15px';
+    uiWindow.appendChild(spacer3);
+
+    /* time slider */
+    const humiditySliderLabel = document.createElement('label');
+    humiditySliderLabel.textContent = 'Relative Humidity [%]: ';
+    humiditySliderLabel.style.marginBottom = '5px';
+    uiWindow.appendChild(humiditySliderLabel);
+
+    const humiditySlider = document.createElement('input');
+    humiditySlider.type = 'range';
+    humiditySlider.min = '0';
+    humiditySlider.max = '100';
+    humiditySlider.value = '0';
+    humiditySlider.style.width = '100%';
+    uiWindow.appendChild(humiditySlider);
+
+    const humiditytValue = document.createElement('span');
+    humiditytValue.textContent = ` ${humiditySlider.value}`;
+    uiWindow.appendChild(humiditytValue);
+
+    humiditySlider.addEventListener('input', (e) => {
+        humiditytValue.textContent = ` ${e.target.value}`;
+        humiditySliderValue = parseFloat(e.target.value);
+    });
+
 
     /* append to doc */
     document.body.appendChild(uiWindow);

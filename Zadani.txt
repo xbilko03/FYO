@@ -7,6 +7,19 @@ Struktura projektu
 
 Téma projektu je zařazeno do širšího rámce optiky. (např. projekt "Gradientní čočky" se zařadí do "Paprsková optika, optická dráha, zobrazování lomem ", příp. "Paprsková optika, Optické přístroje".
 
+
+
+Téma: Atmosférická optika, duha, jevy halo, barva oblohy.
+
+Ako vizualizáciu vytvorím program (v 3D priestore), kde nastanú optické javy podľa zadania:
+* Dážď: Umožní vidieť dúhu
+* Oblaky: Umožní vidieť halo efekty
+* Farba oblohy: Dynamické zobrazenie farby oblohy podľa polohy Slnka a počasia
+* Upravenie vlastností: Možnosť meniť oblačnosť, vlhkosť vzduchu, čas
+
+Vlastnosti môže užívateľ počas behu upraviť.
+V priestore sa môže užívateľ pohybovať čo tiež ovplyvní viditeľnosť niektorých javov.
+
  Projekt je složen za tří částí:
 
 písemná část v rozsahu 7 - 10 stran čistopisu A4 při velikosti písma 11 nebo 12 bodů a jednoduchém,

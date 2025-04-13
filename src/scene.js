@@ -1,6 +1,6 @@
 /*
 * Name		    : scene.js
-* Project	    : Atmospheric optics, rainbow, halo phenomena, sky color.
+* Project	    : Atmospheric optics, rainbow, SunShine phenomena, sky color.
 * Description   : Defines details of the scene
 *
 * Author        : Jozef Bilko (xbilko03)
@@ -10,7 +10,8 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.174.0/build/three.m
 
 var lightSphere;
 var light;
-let cloudsDens = 0.5;
+let cloudsDens = 0.0;
+let humidityRel = 100;
 
 export function createScene(sceneSize)
 {
@@ -63,8 +64,8 @@ export function createScene(sceneSize)
     const cloudGeometry = new THREE.SphereGeometry(sceneSize + 5, 32, 32);
     const cloudMaterial = new THREE.ShaderMaterial({
         uniforms: { 
-            time: { value: time },  // Start time, which can be updated later
-            cloudDensity: { value: cloudsDens }  // Set the cloud density here
+            time: { value: time },
+            cloudDensity: { value: cloudsDens }
         },
     vertexShader: `
     varying vec3 vWorldPosition;
@@ -114,7 +115,7 @@ export function createScene(sceneSize)
 
     // Dynamický threshold: čím vyššia hustota, tým viac oblakov prejde prahom
     float lower = 0.5 - cloudDensity * 2.5; // napr. od 1.0 (bez oblakov) po 0.4 (veľa oblakov)
-    float upper = lower + 4.0;              // mäkký prechod
+    float upper = lower + 5.0;              // mäkký prechod
     float alpha = smoothstep(lower, upper, cloud);
 
     // Farby oblakov na základe času
@@ -146,11 +147,18 @@ export function createScene(sceneSize)
     side: THREE.BackSide  // Zaistíme, že budú priesvitné
 });
 
+
 // Vytvoríme mesh pre oblaky
 const clouds = new THREE.Mesh(cloudGeometry, cloudMaterial);
 clouds.position.set(0, -50, -2);
 clouds.name = 'clouds';  // Ensure it's named 'clouds'
 scene.add(clouds);
+
+
+
+
+
+
 
     /* rainbow definition */
     const rainbowGeometry = new THREE.RingGeometry(1.5, 2, 64, 1, 0, 2 * Math.PI);
@@ -171,10 +179,272 @@ scene.add(clouds);
     scene.add(light);
     /* light ball */
     const lightSphereGeometry = new THREE.SphereGeometry(10.2, 16, 16);
-    const lightSphereMaterial = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+    const lightSphereMaterial = new THREE.MeshBasicMaterial({ color: new THREE.Color(1.0, 0.7, 0.2) });
+
     lightSphere = new THREE.Mesh(lightSphereGeometry, lightSphereMaterial);
     lightSphere.position.set(0, 2, 0);
     scene.add(lightSphere);
+
+
+
+// Definícia pre SunShine efekt okolo slnka
+const SunShineGeometry = new THREE.CircleGeometry(800, 800);  // väčší polomer podľa potreby
+const SunShineMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        SunShineStrength: { value: 1.0 }
+    },
+    vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPosition.xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+        }
+    `,
+    fragmentShader: `
+        varying vec3 vWorldPosition;
+        uniform vec3 lightPosition;
+        uniform float SunShineStrength;
+
+        void main() {
+            float dist = distance(vWorldPosition, lightPosition);
+            float intensity = SunShineStrength * smoothstep(150.0, 0.0, dist);  // väčšie SunShine
+            gl_FragColor = vec4(1.0, 1.0, 1.0, intensity);
+        }
+    `,
+    transparent: true,
+    depthWrite: false,  // Nezapisovať do depth bufferu
+    depthTest: false,   // Vypneme depth test, aby SunShine nebolo orezané inými objektami
+});
+
+// SunShine mesh
+const SunShine = new THREE.Mesh(SunShineGeometry, SunShineMaterial);
+SunShine.name = 'SunShine';
+
+// Nastavenie, aby sa SunShine vykreslovalo pred ostatnými objektmi
+SunShine.renderOrder = 1; // Vyššia hodnota znamená, že sa objekt vykreslí neskôr, teda pred ostatnými
+
+scene.add(SunShine);
+
+const HaloGeometryRed = new THREE.RingGeometry(25, 25.7, 64);
+const HaloGeometryBlue = new THREE.RingGeometry(25.5, 25.9, 64);
+const HaloGeometryPurple = new THREE.RingGeometry(25.8, 26, 64);
+const HaloGeometryLight = new THREE.RingGeometry(26, 350, 64);
+
+const HaloMaterialRed = new THREE.ShaderMaterial({
+    uniforms: {
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        HaloStrength: { value: 1.0 },
+        opacity: { value: humidityRel / 100.0},
+        cloudDens: { value: cloudsDens }
+    },
+    vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPosition.xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+        }
+    `,
+    fragmentShader: `varying vec3 vWorldPosition;
+        uniform vec3 lightPosition;
+        uniform float HaloStrength;
+        uniform float opacity;
+        uniform float cloudDens;
+
+void main() {
+    float dist = distance(vWorldPosition, lightPosition);
+
+    // Prechod od čiernej k žltej na okrajoch
+    float intensity = smoothstep(45.0, 50.0, dist);  // Intenzita sa začína pri vnútornom okraji
+
+    // Generovanie žltej farby na okrajoch
+    vec3 haloColor = vec3(1.0, 0.0, 0.0); // Čistá žltá farba
+
+  
+            float cloudMultiplier = 0.0;
+
+
+            if(cloudDens <= 1.5 && cloudDens >= 0.5)
+            {
+                cloudMultiplier = cloudDens - 1.0;
+                if ( cloudMultiplier < 0.0)
+                    { cloudMultiplier =  cloudMultiplier * -1.0; }
+                cloudMultiplier = 1.0 - cloudMultiplier;
+            }
+
+    // Kombinovanie farby a intenzity
+    gl_FragColor = vec4(haloColor * intensity, opacity * 0.05 * cloudMultiplier); // 1.0 pre plnú nepriehľadnosť
+}
+
+    `,
+    transparent: true,
+    depthWrite: false,  
+    depthTest: false,   
+});
+
+const HaloMaterialBlue = new THREE.ShaderMaterial({
+    uniforms: {
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        HaloStrength: { value: 1.0 },
+        opacity: { value: humidityRel / 100.0},
+        cloudDens: { value: cloudsDens }
+    },
+    vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPosition.xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+        }
+    `,
+    fragmentShader: `varying vec3 vWorldPosition;
+uniform vec3 lightPosition;
+uniform float HaloStrength;
+        uniform float opacity;
+        uniform float cloudDens;
+
+void main() {
+    float dist = distance(vWorldPosition, lightPosition);
+
+    // Prechod od čiernej k žltej na okrajoch
+    float intensity = smoothstep(45.0, 50.0, dist);  // Intenzita sa začína pri vnútornom okraji
+
+    // Generovanie žltej farby na okrajoch
+    vec3 haloColor = vec3(0.0, 0.0, 1.0); // Čistá žltá farba
+
+    float cloudMultiplier = 0.0;
+
+            if(cloudDens <= 1.5 && cloudDens >= 0.5)
+            {
+                cloudMultiplier = cloudDens - 1.0;
+                if ( cloudMultiplier < 0.0)
+                    { cloudMultiplier =  cloudMultiplier * -1.0; }
+                cloudMultiplier = 1.0 - cloudMultiplier;
+            }
+    // Kombinovanie farby a intenzity
+    gl_FragColor = vec4(haloColor * intensity, opacity * 0.05 * cloudMultiplier); // 1.0 pre plnú nepriehľadnosť
+}
+
+    `,
+    transparent: true,
+    depthWrite: false,  
+    depthTest: false,   
+});
+
+const HaloMaterialPurple = new THREE.ShaderMaterial({
+    uniforms: {
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        HaloStrength: { value: 1.0 },
+        opacity: { value: humidityRel / 100.0},
+        cloudDens: { value: cloudsDens }
+    },
+    vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPosition.xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+        }
+    `,
+    fragmentShader: `varying vec3 vWorldPosition;
+uniform vec3 lightPosition;
+uniform float HaloStrength;
+        uniform float opacity;
+        uniform float cloudDens;
+
+void main() {
+    float dist = distance(vWorldPosition, lightPosition);
+
+    // Prechod od čiernej k žltej na okrajoch
+    float intensity = smoothstep(45.0, 50.0, dist);  // Intenzita sa začína pri vnútornom okraji
+
+    // Generovanie žltej farby na okrajoch
+    vec3 haloColor = vec3(0.6, 0.4, 1.0); // Čistá žltá farba
+
+    float cloudMultiplier = 0.0;
+
+            if(cloudDens <= 1.5 && cloudDens >= 0.5)
+            {
+                cloudMultiplier = cloudDens - 1.0;
+                if ( cloudMultiplier < 0.0)
+                    { cloudMultiplier =  cloudMultiplier * -1.0; }
+                cloudMultiplier = 1.0 - cloudMultiplier;
+            }
+    // Kombinovanie farby a intenzity
+    gl_FragColor = vec4(haloColor * intensity, opacity * 0.05 * cloudMultiplier); // 1.0 pre plnú nepriehľadnosť
+}
+
+    `,
+    transparent: true,
+    depthWrite: false,  
+    depthTest: false,   
+});
+
+const HaloMaterialLight = new THREE.ShaderMaterial({
+    uniforms: {
+        lightPosition: { value: new THREE.Vector3(0, 0, 0) },
+        SunShineStrength: { value: 1.0 },
+        opacity: { value: humidityRel / 100.0},
+        cloudDens: { value: cloudsDens }
+    },
+    vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+            vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+            vWorldPosition = worldPosition.xyz;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+        }
+    `,
+    fragmentShader: `
+        varying vec3 vWorldPosition;
+        uniform vec3 lightPosition;
+        uniform float SunShineStrength;
+        uniform float opacity;
+        uniform float cloudDens;
+
+        void main() {
+            float dist = distance(vWorldPosition, lightPosition);
+            float intensity = SunShineStrength * smoothstep(150.0, 0.0, dist);
+            float cloudMultiplier = 0.0;
+
+            if(cloudDens <= 1.5 && cloudDens >= 0.5)
+            {
+                cloudMultiplier = cloudDens - 1.0;
+                if ( cloudMultiplier < 0.0)
+                    { cloudMultiplier =  cloudMultiplier * -1.0; }
+                cloudMultiplier = 1.0 - cloudMultiplier;
+            }
+            gl_FragColor = vec4(1.0, 1.0, 1.0, intensity * opacity *  cloudMultiplier);
+        }
+    `,
+    transparent: true,
+    depthWrite: false,  // Nezapisovať do depth bufferu
+    depthTest: false,   // Vypneme depth test, aby SunShine nebolo orezané inými objektami
+});
+
+
+// Vytvorenie mesh pre Halo
+const HaloRed = new THREE.Mesh(HaloGeometryRed, HaloMaterialRed);
+const HaloBlue = new THREE.Mesh(HaloGeometryBlue, HaloMaterialBlue);
+const HaloPurple = new THREE.Mesh(HaloGeometryPurple, HaloMaterialPurple);
+const HaloLight = new THREE.Mesh(HaloGeometryLight, HaloMaterialLight);
+HaloRed.name = 'HaloRed';
+HaloBlue.name = 'HaloBlue';
+HaloPurple.name = 'HaloPurple';
+HaloLight.name = 'HaloLight';
+
+// Nastavenie pre vykresľovanie Halo objektu
+HaloRed.renderOrder = 1; 
+HaloBlue.renderOrder = 1; 
+HaloPurple.renderOrder = 1; 
+HaloLight.renderOrder = 1; 
+
+scene.add(HaloRed);
+scene.add(HaloBlue);
+scene.add(HaloPurple);
+scene.add(HaloLight);
 
     /* scene */
     const groundGeometry = new THREE.CircleGeometry(sceneSize, 64);
@@ -183,6 +453,7 @@ scene.add(clouds);
     ground.rotation.x = - Math.PI / 2;
     ground.position.y = -0.5;
     scene.add(ground);
+    
 
     return scene;
 }
@@ -236,11 +507,66 @@ export function updateClouds(time, scene, okta) {
     // Find the cloud mesh (since it's the only one)
     const cloud = scene.children.find(child => child.name === 'clouds');
 
+    const HaloRed = scene.children.find(child => child.name === 'HaloRed');
+    const HaloBlue = scene.children.find(child => child.name === 'HaloBlue');
+    const HaloPurple = scene.children.find(child => child.name === 'HaloPurple');
+    const HaloLight = scene.children.find(child => child.name === 'HaloLight');
+
     // If the cloud mesh is found and it has the expected material and uniforms
     if (cloud && cloud.material && cloud.material.uniforms) {
         // Update the time and cloud density values in the shader uniforms
         cloud.material.uniforms.time.value = time;
         cloud.material.uniforms.cloudDensity.value = okta / 4;  // Assuming okta controls cloud density
         cloudsDens = okta / 4;
+        HaloRed.material.uniforms.cloudDens.value = cloudsDens;
+        HaloBlue.material.uniforms.cloudDens.value = cloudsDens;
+        HaloPurple.material.uniforms.cloudDens.value = cloudsDens;
+        HaloLight.material.uniforms.cloudDens.value = cloudsDens;
     }
+}
+export function updateSunShineEffect(time, scene, camera, humidity) {
+    humidityRel = humidity;
+    
+    const SunShine = scene.children.find(child => child.name === 'SunShine');
+    const HaloRed = scene.children.find(child => child.name === 'HaloRed');
+    const HaloBlue = scene.children.find(child => child.name === 'HaloBlue');
+    const HaloPurple = scene.children.find(child => child.name === 'HaloPurple');
+    const HaloLight = scene.children.find(child => child.name === 'HaloLight');
+    // Získame referenciu na SunShine mesh (už vieme, že je len jeden)
+
+    if (SunShine && SunShine.material && SunShine.material.uniforms) {
+        // Aktualizujeme pozíciu SunShine efektu podľa pozície svetla (slnka)
+        SunShine.lookAt(camera.position);
+        SunShine.position.copy(lightSphere.position);
+
+        HaloRed.lookAt(camera.position);
+        HaloRed.position.copy(lightSphere.position);
+        HaloRed.material.uniforms.opacity.value = humidity / 100;
+        
+        HaloBlue.lookAt(camera.position);
+        HaloBlue.position.copy(lightSphere.position);
+        HaloBlue.material.uniforms.opacity.value = humidity / 100;
+        
+        HaloPurple.lookAt(camera.position);
+        HaloPurple.position.copy(lightSphere.position);
+        HaloPurple.material.uniforms.opacity.value = humidity / 100;
+        
+        HaloLight.lookAt(camera.position);
+        HaloLight.position.copy(lightSphere.position);
+        HaloLight.material.uniforms.opacity.value = humidity / 100;
+
+        HaloRed.material.uniforms.cloudDens.value = cloudsDens;
+        HaloBlue.material.uniforms.cloudDens.value = cloudsDens;
+        HaloPurple.material.uniforms.cloudDens.value = cloudsDens;
+        HaloLight.material.uniforms.cloudDens.value = cloudsDens;
+
+
+
+        // Môžeme nastaviť dynamickú intenzitu SunShine efektu podľa času
+        //const SunShineIntensity = Math.sin(Math.PI * (time / 12)) * 0.5 + 0.5;  // Dynamická intenzita na základe času
+        //SunShine.material.uniforms.SunShineStrength.value = SunShineIntensity;  // Nastavenie intenzity SunShine
+    }
+    else
+        console.log("kokot");
+
 }
